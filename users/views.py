@@ -1,5 +1,7 @@
 from urllib import response
-
+from .authentication import CookieJWTAuthentication
+from django.shortcuts import redirect
+import os
 from django.shortcuts import render
 from rest_framework.views import APIView
 from .serializers import UserRegistrationSerializer, UserLoginSerializer
@@ -8,7 +10,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.views import extend_schema
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view, permission_classes
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -16,6 +18,8 @@ from rest_framework.decorators import api_view, permission_classes
 # Create your views here.
 
 class UserRegistrationView(APIView):
+    permission_classes = []
+    authentication_classes = []
     @extend_schema(request=UserRegistrationSerializer, responses={201: UserRegistrationSerializer})
 
     # post method to handle user registeration
@@ -24,13 +28,15 @@ class UserRegistrationView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
-            response = Response({'refresh': str(refresh),'access': str(refresh.access_token)}, status=status.HTTP_201_OK)
+            response = Response({'refresh': str(refresh),'access': str(refresh.access_token)}, status=status.HTTP_201_CREATED)
             response.set_cookie(key="access_token", value=str(refresh.access_token), httponly=True, secure=True, samesite='Strict')
             response.set_cookie(key="refresh_token", value=str(refresh), httponly=True, secure=True, samesite='Strict')
             return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLoginView(APIView):
+    permission_classes = []
+    authentication_classes = []
     @extend_schema(request=UserLoginSerializer, responses={200: UserLoginSerializer, 400: 'Invalid email or password'})
 
     # post method to handle user login
@@ -46,12 +52,15 @@ class UserLoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]               
+
     @extend_schema(request=None, responses={200: 'User logged out successfully', 400: 'Bad Request'})
 
     def post(self, request):
         try:
             refresh_token = request.COOKIES.get('refresh_token')
+            print(22)
             token = RefreshToken(refresh_token)
             token.blacklist()
         except Exception as e:
@@ -62,6 +71,9 @@ class UserLogoutView(APIView):
         return response
 
 class UserTokenRefreshView(APIView):
+    permission_classes = []
+    authentication_classes = []
+
     @extend_schema(request=None, responses={200: 'Access token refreshed successfully', 400: 'bad request'})
 
     def post(self, request):
@@ -79,10 +91,13 @@ class UserTokenRefreshView(APIView):
 
 
 
-
-
-@api_view(['GET'])
+@login_required
 def get_tokens(request):
-    access_token = request.session.get('access_token')
-    refresh_token = request.session.get('refresh_token')
-    return Response({'access_token': access_token, 'refresh_token': refresh_token}, status=status.HTTP_200_OK)
+    refresh = RefreshToken.for_user(request.user)
+    access_token = str(refresh.access_token)
+    refresh_token = str(refresh)
+    frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:8000')
+    response = redirect(frontend_url)
+    response.set_cookie(key="access_token", value=access_token, httponly=False, secure=False, samesite='Strict')
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=False, secure=False, samesite='Strict')
+    return response
