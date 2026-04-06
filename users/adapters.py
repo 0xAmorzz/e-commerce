@@ -16,6 +16,8 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
     
     def save_user(self, request, sociallogin, form=None):
         user = super().save_user(request, sociallogin, form)
+        user.is_active = True
+        user.save()
         refresh = RefreshToken.for_user(user)
         request.session['access_token'] = str(refresh.access_token)
         request.session['refresh_token'] = str(refresh)
