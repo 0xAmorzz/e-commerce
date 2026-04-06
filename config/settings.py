@@ -152,9 +152,21 @@ LOGIN_REDIRECT_URL = '/api/v1/users/social-login/'
 ACCOUNT_ADAPTER = 'users.adapters.AccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'users.adapters.SocialAccountAdapter'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# GMAIL SMTP settings
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+# Password reset token expiration time
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # 24 hours in seconds
