@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserRegistrationView,UserLoginView,UserLogoutView,UserTokenRefreshView, get_tokens
+from .views import UserRegistrationView,UserLoginView,UserLogoutView,UserTokenRefreshView, get_tokens, AccountActivationView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 
@@ -11,5 +11,6 @@ urlpatterns = [
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('social-login/', get_tokens, name='social_login'),
+    path('activate/<uidb64>/<token>/',AccountActivationView.as_view() , name='activate'),
 ]
 
