@@ -20,12 +20,29 @@ class Category(models.Model):
 
 
 
+class ProductAtrribute(models.Model):
+    name=models.CharField(max_length=50)
+    def __str__(self):
+        return f"{self.name}"
+
+
+
+
+# an atrribute -> many attribute values(fk)
+class ProductAtrributeValue(models.Model): 
+    atrribute = models.ForeignKey(ProductAtrribute , on_delete=models.CASCADE , related_name='values')
+    value = models.CharField(max_length=200)
+    def __str__(self):
+        return f"{self.atrribute.name}: {self.value}"
+
+
 
 # for each brand there are multiple products of that brand
 # brand -> many products(fk)
 class ProductBrand(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField()
+    logo = models.ImageField(upload_to='brands/' , null=True , blank=True)
 
 
 # category -> many products(fk) 
@@ -34,54 +51,37 @@ class Product(models.Model):
     category = models.ForeignKey(Category , on_delete=models.CASCADE , related_name='products')
     description = models.TextField(blank=True)
     brand = models.ForeignKey(ProductBrand , null=True , on_delete=models.SET_NULL)
+    attribute_vals = models.ManyToManyField(ProductAtrributeValue , blank=True , related_name='products')
 
 
 
-
-# for each color there is multiple products (ex-> blue: (coat , shoe , shirt))
-# so color -> many product items(fk)
-class ProductColor(models.Model):
-    color = models.CharField(max_length=50)
-
-
-
-# for each size there is multiple products (ex-> L: (shoe , shirt , pants))
-# so size -> many product items(fk)
-class ProductSize(models.Model):
-    name = models.CharField(max_length=100)
-
-
-
-
-
-
-# for each product there are variants with different colors , prices
-class ProductItem(models.Model):
-    product = models.ForeignKey(Product , on_delete=models.CASCADE , related_name='items')
-    color = models.ForeignKey(ProductColor , null=True , on_delete=models.SET_NULL , related_name='items')
+# since a product could have many atrributes , and an attribute could be used
+# in multiple products so its a ManyToMany rel defined below
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product , on_delete=models.CASCADE , related_name='variants')
     original_price = models.DecimalField(max_digits=8 , decimal_places=2)
     sale_price = models.DecimalField(max_digits= 8 , decimal_places=2 , null=True , blank=True)
+    stock = models.IntegerField(default=0)
+    atrribute_vals = models.ManyToManyField(ProductAtrributeValue , blank=True , null=True , related_name='variants')
 
-    class Meta:
-        unique_together = [['product' , 'color']]
+
+
+
+
+
+
+
+
 
 
 
 
 # for each product item there are variations with sizes
-
-class ProductVariation(models.Model):
-    prd_item = models.ForeignKey(ProductItem , on_delete=models.CASCADE)
-    size = models.ForeignKey(ProductSize , on_delete=models.CASCADE , related_name='variations')
-    stock = models.IntegerField()
-
-
-
 # since for each product there could be multiple images ,
 # thus we create a table for them
 # product_item -> many images(fk)
 class ProductImage(models.Model):
-    image = models.ImageField(upload_to='/products/images' , null=True , blank=True)
-    product = models.ForeignKey(ProductItem , on_delete=models.CASCADE , related_name='images')
+    image = models.ImageField(upload_to='products/images' , null=True , blank=True)
+    product = models.ForeignKey(ProductVariant , on_delete=models.CASCADE , related_name='images')
 
 
