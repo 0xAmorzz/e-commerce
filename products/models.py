@@ -68,14 +68,6 @@ class ProductVariant(models.Model):
 
 
 
-
-
-
-
-
-
-
-
 # for each product item there are variations with sizes
 # since for each product there could be multiple images ,
 # thus we create a table for them
