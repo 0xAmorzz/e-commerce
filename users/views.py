@@ -190,6 +190,7 @@ class ChangePasswordView(APIView):
             user.set_password(new_password)
             user.save()
             return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
+        return Response({'error': 'Old password is incorrect'}, status=status.HTTP_400_BAD_REQUEST)
 
 @login_required
 def get_tokens(request):
