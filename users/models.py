@@ -30,7 +30,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     country = models.CharField(max_length=50) # will change it to choices later
-    gender = models.CharField(choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')], max_length=10)
     phone_number = models.CharField(max_length=20,validators=[
             RegexValidator(
                 regex=r'^\+?1?\d{9,15}$',
