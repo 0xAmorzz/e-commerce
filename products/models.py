@@ -20,7 +20,7 @@ class Category(models.Model):
 
 
 
-class ProductAtrribute(models.Model):
+class ProductAttribute(models.Model):
     name=models.CharField(max_length=50)
     def __str__(self):
         return f"{self.name}"
@@ -29,8 +29,8 @@ class ProductAtrribute(models.Model):
 
 
 # an atrribute -> many attribute values(fk)
-class ProductAtrributeValue(models.Model): 
-    atrribute = models.ForeignKey(ProductAtrribute , on_delete=models.CASCADE , related_name='values')
+class ProductAttributeValue(models.Model): 
+    attribute = models.ForeignKey(ProductAttribute , on_delete=models.CASCADE , related_name='values')
     value = models.CharField(max_length=200)
     def __str__(self):
         return f"{self.atrribute.name}: {self.value}"
@@ -51,7 +51,7 @@ class Product(models.Model):
     category = models.ForeignKey(Category , on_delete=models.CASCADE , related_name='products')
     description = models.TextField(blank=True)
     brand = models.ForeignKey(ProductBrand , null=True , on_delete=models.SET_NULL)
-    attribute_vals = models.ManyToManyField(ProductAtrributeValue , blank=True , related_name='products')
+    attribute_vals = models.ManyToManyField(ProductAttributeValue , blank=True , related_name='products')
 
 
 
@@ -62,7 +62,7 @@ class ProductVariant(models.Model):
     original_price = models.DecimalField(max_digits=8 , decimal_places=2)
     sale_price = models.DecimalField(max_digits= 8 , decimal_places=2 , null=True , blank=True)
     stock = models.IntegerField(default=0)
-    atrribute_vals = models.ManyToManyField(ProductAtrributeValue , blank=True , null=True , related_name='variants')
+    atrribute_vals = models.ManyToManyField(ProductAttributeValue , blank=True , null=True , related_name='variants')
 
 
 

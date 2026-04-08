@@ -2,8 +2,9 @@ from django.shortcuts import render
 from rest_framework import generics , viewsets 
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .serializers import (CategorySerializer , ProductSerializer , ProductBrandSerializer)
-from .models import (Category , Product , ProductBrand)
+from .serializers import (CategorySerializer , ProductSerializer , ProductBrandSerializer
+                          , ProductAttributeSerializer , ProductAttributeValueSerializer)
+from .models import (Category , Product , ProductBrand , ProductAttribute , ProductAttributeValue)
 
 # Create your views here.
 
@@ -30,6 +31,22 @@ class ProductBrandViewSet(viewsets.ModelViewSet):
         qs = Product.objects.filter(brand=brand)
         serializer = ProductBrandSerializer(qs , many=True , context={'request':request})
         return Response(serializer.data)
+    
+
+# ATTRIBUTES VIEWS
+
+class ProductAttributeViewSet(viewsets.ModelViewSet):
+    # we are also fetching the values of the atrribute
+    queryset = ProductAttribute.objects.prefetch_related('values')
+    serializer_class = ProductAttributeSerializer
+
+
+class ProductAttributeValueViewSet(viewsets.ModelViewSet):
+    queryset = ProductAttribute.objects.prefetch_related('attribute')
+    serializer_class = ProductAttributeSerializer
+
+
+
 
     
 
