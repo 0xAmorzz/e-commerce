@@ -130,7 +130,21 @@ class UserTokenRefreshView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+class ChangePasswordView(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses={200: 'Password changed successfully', 400: 'Bad Request'})
+    def post(self,request):
+        user = request.user
+        old_password = request.data['old_password']
+        new_password = request.data['new_password']
+        if user.check_password(old_password):
+            if old_password == new_password:
+                return Response({'error': 'New password cannot be the same as the old password'}, status=status.HTTP_400_BAD_REQUEST)
+            user.set_password(new_password)
+            user.save()
+            return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
 
 @login_required
 def get_tokens(request):
