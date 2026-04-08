@@ -17,17 +17,62 @@ from django.utils.encoding import force_bytes
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from .models import User
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.conf import settings
 
 
 # Create your views here.
+class PasswordResetView(APIView):
+    permission_class = []
+    authentication_classes = []
+
+    def post(self, request, uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except:
+            user = None
+
+        if user is not None and PasswordResetTokenGenerator().check_token(user, token):
+            new_password = request.data['new_password']
+            user.set_password(new_password)
+            user.save()
+            return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
+        return Response({'error': 'Invalid password reset link'}, status=status.HTTP_400_BAD_REQUEST)
+
+class RequestPasswordResetEmail(APIView):
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self,request):
+        email = request.data['email']
+        if User.objects.filter(email=email).exists():
+            reset_password_email(request)
+            return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
+        return Response({'error': 'User with this email doesn\'t exist'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def reset_password_email(request):
+    mail_subject = 'NEXA Password Reset'
+    user = User.objects.get(email=request.data['email'])
+    
+    message = render_to_string('users/email/password_reset_email.html', {
+        'user': user.email,
+        'domain': os.getenv('FRONTEND_URL') or '127.0.0.1:8000',
+        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': PasswordResetTokenGenerator().make_token(user),
+        'protocol': 'https' if request.is_secure() else 'http',
+    })
+    email = EmailMessage(mail_subject, message, settings.EMAIL_HOST_USER, [request.data['email']])
+    email.content_subtype = "html"
+    email.send()
+
 
 class AccountActivationView(APIView):
     permission_classes = []
     authentication_classes = []
     
     def get(self, request, uidb64, token):
-        user = User
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
             user = User.objects.get(pk=uid)
