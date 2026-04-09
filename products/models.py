@@ -33,7 +33,7 @@ class ProductAttributeValue(models.Model):
     attribute = models.ForeignKey(ProductAttribute , on_delete=models.CASCADE , related_name='values')
     value = models.CharField(max_length=200)
     def __str__(self):
-        return f"{self.atrribute.name}: {self.value}"
+        return f"{self.attribute.name}: {self.value}"
 
 
 
@@ -62,7 +62,7 @@ class ProductVariant(models.Model):
     original_price = models.DecimalField(max_digits=8 , decimal_places=2)
     sale_price = models.DecimalField(max_digits= 8 , decimal_places=2 , null=True , blank=True)
     stock = models.IntegerField(default=0)
-    atrribute_vals = models.ManyToManyField(ProductAttributeValue , blank=True , null=True , related_name='variants')
+    attribute_vals = models.ManyToManyField(ProductAttributeValue ,  blank=True, related_name='variants')
 
 
 
