@@ -1,13 +1,24 @@
 from django.shortcuts import render
-from rest_framework import generics , viewsets 
+from rest_framework import generics , viewsets , status
 from rest_framework.decorators import action
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import (CategorySerializer , ProductSerializer , ProductBrandSerializer
-                          , ProductAttributeSerializer , ProductAttributeValueSerializer, ProductVariantSerializer)
+from .serializers import (CategorySerializer , ProductListSerializer , ProductBrandSerializer
+                          , ProductAttributeSerializer , ProductAttributeValueSerializer, ProductVariantSerializer ,
+                            ProductGenderSerializer , ProductDetailSerializer)
 from .models import (Category , Product , ProductBrand , ProductAttribute
-                      , ProductAttributeValue , ProductVariant)
+                      , ProductAttributeValue , ProductVariant , ProductGender)
 
 # Create your views here.
+
+
+class GenderListCreateView(generics.ListCreateAPIView):
+    queryset = ProductGender.objects.all()
+    serializer_class = ProductGenderSerializer
+
+class GenderDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ProductGender.objects.all()
+    serializer_class = ProductGenderSerializer
 
 class CategoryListCreateAPIView(generics.ListCreateAPIView):
     queryset = Category.objects.all()
@@ -22,7 +33,7 @@ class CategoryDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 # for getting products inside a category
 # /categories/{id}/products
 class CategoryProductView(generics.ListAPIView):
-    serializer_class = ProductSerializer
+    serializer_class = ProductListSerializer
 
     def get_queryset(self):
         return Product.objects.filter(category_id=self.kwargs['pk'])
@@ -40,7 +51,7 @@ class BrandDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 # /brands/{id}/products
 class BrandProductsView(generics.ListAPIView):
-    serializer_class = ProductSerializer()
+    serializer_class = ProductListSerializer
     def get_queryset(self):
         return Product.objects.filter(brand_id=self.kwargs['pk'])
 
@@ -50,37 +61,47 @@ class BrandProductsView(generics.ListAPIView):
 
 class AttributeListCreateView(generics.ListCreateAPIView):
     queryset = ProductAttribute.objects.all()
-    serializer_class = ProductAttributeSerializer()
+    serializer_class = ProductAttributeSerializer
 
 
 class AttributeDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProductAttribute.objects.all()
-    serializer_class = ProductAttributeSerializer()
+    serializer_class = ProductAttributeSerializer
 
 
 class AttributeValueListCreateView(generics.ListCreateAPIView):
     queryset = ProductAttributeValue.objects.all()
-    serializer_class = ProductAttributeValueSerializer()
+    serializer_class = ProductAttributeValueSerializer
 
 
 class AttributeValueDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProductAttributeValue.objects.all()
-    serializer_class = ProductAttributeValueSerializer()
+    serializer_class = ProductAttributeValueSerializer
 
 
 # MAIN PRODUCT VIEWSET
 
-class ProductListCreateView(generics.ListCreateAPIView):
-    serializer_class = ProductSerializer
-    def get_queryset(self):
-        Product.objects.select_related("brand" , "category").prefetch_related("attribute_vals",
-                                                                              "variants__attribute_vals" , "variants__images")
+class ProductListCreateView(APIView):
+    def get(self , request):
+        qs = (
+            Product.objects.select_related('brand' , 'category')
+            .prefetch_related('variants__attribute_vals', 'variants__images')
+
+        )
+        serializer = ProductListSerializer(qs , many=True , context={'request':request})
+        return Response(serializer.data)
+
+    def post(self , request):
+        serializer = ProductDetailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data , status=status.HTTP_201_CREATED)
         
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = ProductSerializer
+    serializer_class = ProductDetailSerializer
     def get_queryset(self):
-        Product.objects.select_related("brand" , "category").prefetch_related("attribute_vals",
+        return Product.objects.select_related("brand" , "category").prefetch_related("attribute_vals",
                                                                               "variants__attribute_vals" , "variants__images")
     
 

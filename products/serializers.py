@@ -32,7 +32,7 @@ class ProductBrandSerializer(serializers.ModelSerializer):
 
 
 class ProductAttributeValueSerializer(serializers.ModelSerializer):
-    attribute_name = serializers.CharField(source='atrribute.name' , read_only=True)
+    attribute_name = serializers.CharField(source='attribute.name' , read_only=True)
     class Meta:
         model = ProductAttributeValue
         fields = ('id' , 'attribute' , 'attribute_name' , 'value')
@@ -54,12 +54,19 @@ class ProductImageSerializer(serializers.ModelSerializer):
 # MAIN PRODUCT SERIALIZER
 class ProductVariantSerializer(serializers.ModelSerializer):
     attribute_vals = ProductAttributeValueSerializer(many=True , read_only=True)
+    attribute_val_ids = serializers.PrimaryKeyRelatedField(
+        queryset=ProductAttributeValue.objects.all(),
+        many=True,
+        write_only=True,
+        source='attribute_vals',
+        required=False,
+    )
     images = ProductImageSerializer(many=True , read_only=True)
 
     class Meta:
         model = ProductVariant
         fields = ('id' , 'original_price' , 'sale_price' , 'stock' ,
-                   'attribute_vals' , 'images')
+                   'attribute_vals' , 'attribute_val_ids' , 'images')
         
     
 
@@ -67,12 +74,12 @@ class ProductListSerializer(serializers.ModelSerializer):
     category = CategoryMinimalSerializer(read_only=True)
     brand = ProductBrandSerializer(read_only=True)
     image = serializers.SerializerMethodField()
-    price = serializers.SerializerMethodField()
+    variants = ProductVariantSerializer(many=True , read_only=True)
 
     class Meta:
         model = Product
         fields = [
-            'id' , 'name' , 'category' , 'brand' , 
+            'id' , 'name' , 'category' , 'brand' , 'image' ,  'variants' 
         ]
 
     def get_image(self , obj):
@@ -83,13 +90,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         return None
         
 
-        # where obj is Product
-    def get_price(self , obj):
-        variant = obj.variants.first()
-        if not variant:
-            return None
-            
-        return variant.original_price
+
         
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -104,14 +105,36 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     brand_id = serializers.PrimaryKeyRelatedField(queryset=ProductBrand.objects.all() , write_only=True , source='brand')
     attribute_vals_ids = serializers.PrimaryKeyRelatedField(queryset=ProductAttributeValue.objects.all() , many=True , write_only=True ,
                                                              source='attribute_vals' , required=False)
+
+    variants_data = ProductVariantSerializer(many=True , write_only=True , required=False)
     
 
     class Meta:
         model = Product
         fields = [
             'id' , 'name' , 'description' , 'category' , 'brand' , 'attribute_vals' , 'variants',
-            'category_id' , 'brand_id' , 'attribute_vals_ids'
+            'category_id' , 'brand_id' , 'attribute_vals_ids' , 'variants_data'
         ]
+
+    def create(self, validated_data):
+        attribute_vals = validated_data.pop('attribute_vals', [])
+        variants_data  = validated_data.pop('variants_data', [])
+
+        # create the product
+        product = Product.objects.create(**validated_data)
+
+        # assign product-level attribute values
+        if attribute_vals:
+            product.attribute_vals.set(attribute_vals)
+
+        # create each variant
+        for variant_data in variants_data:
+            variant_attrs = variant_data.pop('attribute_vals', [])
+            variant = ProductVariant.objects.create(product=product, **variant_data)
+            if variant_attrs:
+                variant.attribute_vals.set(variant_attrs)
+
+        return product
 
 
 

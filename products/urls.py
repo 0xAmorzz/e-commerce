@@ -3,18 +3,22 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
+    # genders
+    path('gender/' , GenderListCreateView.as_view() , name='genders'),
+    path('gender/<int:pk>/' , GenderDetailView.as_view() , name='genders-detail'),
+
     # categories
     path('categories/' , CategoryListCreateAPIView.as_view() , name='categories'),
     path('categories/<int:pk>/', CategoryDetailAPIView.as_view() , name='categories-detail'),
 
     # products inside of a category
-    path('categories/<int:pk>/products' , CategoryProductView.as_view() , 'category-products'),
+    path('categories/<int:pk>/products/' , CategoryProductView.as_view() , name='category-products'),
 
 
     # brands
     path('brands/' , BrandListCreateAPIView.as_view(), name='brand'),
     path('brands/<int:pk>/' , BrandDetailView.as_view() , name='brand-detail'),
-    path('brands/<int:pk>/products/' , BrandProductsView.as_view() , 'brand-products'),
+    path('brands/<int:pk>/products/' , BrandProductsView.as_view() , name='brand-products'),
 
     # attribute
     path('attributes/' , AttributeListCreateView.as_view() , name='attribute'),

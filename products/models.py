@@ -74,6 +74,6 @@ class ProductVariant(models.Model):
 # product_item -> many images(fk)
 class ProductImage(models.Model):
     image = models.ImageField(upload_to='products/images' , null=True , blank=True)
-    product = models.ForeignKey(ProductVariant , on_delete=models.CASCADE , related_name='images')
+    variant = models.ForeignKey(ProductVariant , on_delete=models.CASCADE , related_name='images')
 
 
